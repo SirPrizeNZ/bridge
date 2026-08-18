@@ -1,0 +1,19 @@
+FIGMA AGENT BRIDGE — IMPORT
+
+1. Start the local bridge first:
+   macOS: double-click start-bridge.command
+   Windows: double-click start-bridge.bat
+
+2. In Figma Desktop:
+   Plugins → Development → Import plugin from manifest…
+
+3. Select THIS FILE at the root of this folder:
+   manifest.json
+
+Do not select manifest.max.json unless you intentionally want the experimental Max channel.
+
+The root manifest loads:
+  plugin/code.js
+  plugin/ui.html
+
+The plugin communicates only with your local bridge at port 3874 during development.

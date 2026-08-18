@@ -1,0 +1,19 @@
+{
+  "name": "figma-agent-bridge",
+  "version": "0.2.8",
+  "private": true,
+  "description": "Local, agent-grade MCP control plane for the live Figma Plugin API",
+  "type": "module",
+  "author": "SirPrize (https://github.com/SirPrizeNZ)",
+  "contributors": [
+    "SirPrize <https://github.com/SirPrizeNZ>"
+  ],
+  "scripts": {
+    "start": "node bridge/server.mjs",
+    "check": "node --check bridge/server.mjs && node --check plugin/code.js",
+    "test": "node tests/smoke.mjs && node tests/static.mjs",
+    "configure": "node scripts/configure-manifests.mjs",
+    "bench": "node tests/benchmark.mjs"
+  },
+  "license": "MIT"
+}

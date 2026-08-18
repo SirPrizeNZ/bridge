@@ -1,0 +1,3 @@
+[mcp_servers.figma-agent-bridge]
+command = "node"
+args = ["/ABSOLUTE/PATH/TO/figma-agent-bridge/bridge/server.mjs"]

@@ -1,0 +1,20 @@
+{
+  "name": "Figma Agent Bridge",
+  "id": "153743829015672481",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "http://localhost:3874"
+    ],
+    "reasoning": "Connects to the Figma Agent Bridge running locally on the user’s computer."
+  },
+  "permissions": [
+    "teamlibrary"
+  ]
+}
