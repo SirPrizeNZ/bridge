@@ -1,20 +1,16 @@
 <p align="center">
-  <img src="assets/logo.gif" alt="Bridge Logo" width="700" />
-</p>
-
-<p align="center">
-  <img src="assets/demo.gif" alt="Bridge Demo" width="600" />
+  <img src="assets/logo.png" alt="Bridge" width="100%" />
 </p>
 
 # Bridge
 
-Bridge is a local, agent-grade Model Context Protocol (MCP) control plane for the live Figma Plugin API. It enables AI coding assistants and autonomous agents to inspect, reason about, render, and mutate the currently active Figma document in real time without requiring Figma Dev Mode, enterprise REST quotas, or external cloud parsers.
+Bridge is a local, agent-grade Model Context Protocol (MCP) control plane for the live Figma Plugin API. It enables AI assistants and autonomous coding agents to inspect, reason about, render, and mutate the currently active Figma document in real time without requiring Figma Dev Mode, enterprise REST quotas, or external cloud parsers.
 
 ---
 
 ## Overview
 
-Unlike standard REST integrations that query static snapshots on Figma servers, Bridge communicates directly with a live Figma Desktop session through an authenticated local loopback transport (`127.0.0.1:3874`). 
+Unlike standard REST integrations that query static snapshots on Figma servers, Bridge communicates directly with a live Figma Desktop session through an authenticated local loopback transport (`127.0.0.1:3874`).
 
 The open Figma document remains the single source of truth. Mutations and reads occur in the active document context, ensuring exact fidelity with Figma rendering, variables, components, styles, and vector networks.
 
@@ -65,7 +61,7 @@ Bridge consists of two lightweight components:
 
 ---
 
-## Installation and Quick Start
+## Installation and Setup
 
 ### 1. Load the Plugin in Figma Desktop
 
