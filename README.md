@@ -1,28 +1,28 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Bridge" width="100%" />
+  <img src="assets/logo.gif" alt="Bridge" width="100%" />
 </p>
 
 # Bridge
 
-Bridge is a local, agent-grade Model Context Protocol (MCP) control plane for the live Figma Plugin API. It enables AI assistants and autonomous coding agents to inspect, reason about, render, and mutate the currently active Figma document in real time without requiring Figma Dev Mode, enterprise REST quotas, or external cloud parsers.
+> Free, local Model Context Protocol (MCP) server for live Figma documents. Inspect, reason about, render, and edit active designs with AI agents directly in Figma Desktop without Dev Mode or paid REST API quotas.
 
 ---
 
 ## Overview
 
-Unlike standard REST integrations that query static snapshots on Figma servers, Bridge communicates directly with a live Figma Desktop session through an authenticated local loopback transport (`127.0.0.1:3874`).
+Bridge connects your AI coding assistant directly to the live Figma Plugin API inside your open Figma Desktop session via a fast, local loopback connection (`127.0.0.1:3874`).
 
-The open Figma document remains the single source of truth. Mutations and reads occur in the active document context, ensuring exact fidelity with Figma rendering, variables, components, styles, and vector networks.
+Unlike traditional Figma REST integrations that read static cloud files, Bridge works directly on the canvas in real time. Your active document is the immediate source of truth, enabling agents to inspect exact geometry, typography runs, components, variables, and styles, and verify visual edits instantly.
 
 ---
 
-## Key Features
+## Why Bridge
 
-- **Direct Live Inspection**: Query document structure, exact render bounds, styles, variables, typography runs, and components from the open Figma tab.
-- **Visual Verification**: Export high-resolution rendered PNG, JPG, SVG, and PDF directly from Figma to verify visual changes before and after mutations.
-- **Safe, Atomic Mutations**: Execute isolated and batch mutations with fingerprint assertions, rollback support, and an in-plugin hardware kill-switch.
-- **Short-Lived Pairing Protocol**: Secure local pairing using one-time 6-digit OTP codes with replay protection and local master secret derivation.
-- **Broad MCP Toolset**: 23 dedicated MCP tools spanning inspection, components, typography, layout, variables, styles, assets, prototype reactions, and version history.
+- **100% free and local**: No Figma Dev Mode subscription, no cloud seat requirements, and no REST API rate limits.
+- **Effortless 30-second setup**: Import the local manifest into Figma Desktop, add the server to your agent configuration, and pair with a 6-digit code.
+- **Live canvas fidelity**: Reads and writes execute directly in the active Figma tab with full access to variables, components, vectors, and typography.
+- **Visual verification**: Agents export authoritative PNG, JPG, SVG, and PDF renders directly from the canvas to verify mutations before finalizing.
+- **Safe and reversible**: Built-in fingerprint assertions, rollback support, and an instant write kill-switch in the plugin interface.
 
 ---
 
@@ -30,24 +30,24 @@ The open Figma document remains the single source of truth. Mutations and reads 
 
 Bridge consists of two lightweight components:
 
-1. **Local MCP Server (`bridge/server.mjs`)**: A dependency-free Node.js stdio MCP server that exposes tools to AI clients and manages an authenticated loopback HTTP long-poll transport.
-2. **Figma Desktop Plugin (`plugin/`)**: A local manifest plugin that runs in Figma Desktop, executes API operations within the Figma document sandbox, and streams results back to the local server.
+1. **Local MCP server (`bridge/server.mjs`)**: A dependency-free Node.js stdio MCP server that exposes tools to AI clients and manages an authenticated loopback HTTP long-poll transport.
+2. **Figma Desktop plugin (`plugin/`)**: A local manifest plugin that runs inside Figma Desktop, executes API operations within the Figma document sandbox, and streams results back to the local server.
 
 ```
 +-------------------+             stdio              +----------------------+
 |                   | <============================> |                      |
-|     AI Agent      |   Model Context Protocol (MCP) |    Local Bridge      |
-| (Antigravity/     |                                |    Node Server       |
+|     AI agent      |   Model Context Protocol (MCP) |    Local bridge      |
+| (Antigravity/     |                                |    Node server       |
 |  Claude/Cursor/   |                                |  (127.0.0.1:3874)    |
 |  Codex)           |                                +----------+-----------+
 +-------------------+                                           ^
-                                                                | HTTP Long-Poll
+                                                                | HTTP long-poll
                                                                 | (Authenticated)
                                                                 v
                                                      +----------+-----------+
                                                      |                      |
                                                      |    Figma Desktop     |
-                                                     |    Plugin Sandbox    |
+                                                     |    Plugin sandbox    |
                                                      |                      |
                                                      +----------------------+
 ```
@@ -61,17 +61,18 @@ Bridge consists of two lightweight components:
 
 ---
 
-## Installation and Setup
+## Installation and setup
 
-### 1. Load the Plugin in Figma Desktop
+Setting up Bridge takes less than a minute.
 
-1. Open Figma Desktop.
-2. Open any Figma design document.
-3. Navigate to **Plugins** -> **Development** -> **Import plugin from manifest...**.
-4. Select the `manifest.json` file inside this repository.
-5. Run **Bridge** from your development plugins menu and keep the plugin window open.
+### 1. Load the plugin in Figma Desktop
 
-### 2. Configure Your MCP Client
+1. Open Figma Desktop and open any design file.
+2. Go to **Plugins** -> **Development** -> **Import plugin from manifest...**.
+3. Select the `manifest.json` file in this repository.
+4. Launch **Bridge** from your development plugins menu and leave the plugin window open.
+
+### 2. Add Bridge to your agent configuration
 
 Add Bridge to your client configuration file.
 
@@ -122,27 +123,28 @@ Add Bridge to your client configuration file.
 
 ---
 
-## Pairing Workflow
+## Pairing workflow
 
-1. Start your AI agent and send the initial connection prompt (available via the **Copy prompt** button in the plugin UI).
-2. The agent will call `bridge_status` and return a fresh 6-digit pairing code.
-3. Paste or type the 6-digit code into the first OTP box in the Figma plugin window.
-4. The plugin authenticates with the local server, establishes an active session, and enables live document tools.
+1. Open the Bridge plugin in Figma Desktop and click **Copy prompt**.
+2. Paste the prompt to your AI assistant. If Bridge is not already configured, the agent will self-configure and request an environment reload.
+3. Once running, the agent calls `bridge_status` and returns a fresh 6-digit code.
+4. Paste the 6-digit code into the first OTP box in the plugin window.
+5. The plugin connects immediately, enabling full live inspection and mutation tools.
 
 ---
 
-## Available MCP Tools
+## Available tools
 
-### Inspection and Context
+### Inspection and context
 - `bridge_status`: Returns daemon health, active pairing code, and connected file sessions.
 - `bridge_doctor`: Diagnostic health check for transport and environment state.
 - `figma_context`: Returns current file name, active page, selection, and viewport bounds.
 - `figma_search`: Searches nodes on the current page or across all pages by name, type, or parent.
-- `figma_inspect`: Performs deep inspection of node geometry, fills, strokes, effects, layout, and text segments.
+- `figma_inspect`: Deep inspection of node geometry, fills, strokes, effects, layout, and text segments.
 - `figma_analyse`: Structural and statistical summary of subtrees, variants, and styles.
 - `figma_recent_events`: Retrieves real-time selection and document modification events.
 
-### Visual Verification
+### Visual verification
 - `figma_snapshot`: Single round-trip returning node hierarchy data along with an authoritative Figma PNG render.
 - `figma_render`: Exports authoritative PNG, JPG, SVG, PDF, or JSON_REST_V1 representations of target nodes.
 
@@ -155,7 +157,7 @@ Add Bridge to your client configuration file.
 - `figma_assets`: Image byte management and server-side URL asset imports.
 - `figma_history`: Checkpoint commits, version requests, and undo operations.
 
-### Design Systems and Dev Data
+### Design systems and developer data
 - `figma_library`: Published library variable and component discovery and import.
 - `figma_fonts`: Font family listing, font weight searching, and async font loading.
 - `figma_dev`: CSS code generation, measurements, and dev resource attachment.
@@ -168,13 +170,13 @@ Add Bridge to your client configuration file.
 
 ---
 
-## Security Model
+## Security model
 
-- **Loopback Bound**: Network listener binds strictly to `127.0.0.1:3874`. No remote connections are accepted.
-- **Isolated Token Derivation**: Every installation derives separate authorization tokens from a local random secret (`~/.figma-agent-bridge/secret.json`).
-- **Short-Lived OTP**: Pairing codes expire after 15 minutes and invalidate immediately upon successful authentication.
-- **Hardware Kill-Switch**: The plugin UI provides an instant toggle to pause all write permissions while preserving read access.
-- **Unsafe Invocation Gate**: Dynamic method invocation is disabled by default and requires simultaneous agent opt-in and plugin UI authorization.
+- **Loopback isolation**: Network listener binds strictly to `127.0.0.1:3874`. No external connections are accepted.
+- **Per-installation credentials**: Installation tokens are derived locally from a random master secret (`~/.figma-agent-bridge/secret.json`).
+- **Short-lived codes**: Pairing codes expire after 15 minutes and invalidate immediately upon successful pairing.
+- **Hardware kill-switch**: The plugin window includes a toggle to pause write permissions at any time while keeping read access active.
+- **Unsafe invoke gate**: Direct runtime invocation is disabled by default and requires both agent opt-in and manual plugin toggle activation.
 
 ---
 
