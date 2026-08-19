@@ -1,3 +1,23 @@
+## v0.2.9
+- Rewrote the agent-facing guidance for fidelity work. The previous advice was to
+  "start narrow and widen" on figma_inspect, which optimises for context safety at
+  the cost of correctness: a narrow read only surfaces the properties you thought
+  to ask for, so node-level opacity, gradient direction and style bindings are
+  routinely missed. Reading cheaply is a filtering problem, not a "request less"
+  problem -- a 136-node screen is ~3.4M chars raw but ~35k once per-node
+  boilerplate is stripped.
+- figma_inspect results now carry a `note` explaining, at the point of use, that
+  x/y are parent-relative (deriving padding from them is the most common cause of
+  wrong spacing), that absoluteRenderBounds is ink where absoluteBoundingBox is
+  the node box, and that opacity/visible/blendMode are node fields not fully
+  mirrored in css. Oversized payloads additionally advise filtering the spilled
+  file rather than retrying at a smaller depth.
+- figma_snapshot is now described as the tool to prefer when matching an
+  implementation to a design: structure states intent, the render proves it.
+- Fixed the reported server version: bridge/server.mjs still hard-coded 0.2.7,
+  so a v0.2.8 install introduced itself as 0.2.7 in bridge_status and to pairing
+  clients.
+
 ## v0.2.8
 - Rounded the plugin surface on the bottom corners only.
 - Preserved the v0.2.7 progressive Step 2 reveal and control styling.

@@ -1,6 +1,6 @@
 {
   "name": "figma-agent-bridge",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": true,
   "description": "Local, agent-grade MCP control plane for the live Figma Plugin API",
   "type": "module",

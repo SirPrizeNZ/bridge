@@ -11,7 +11,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { URL } from 'node:url';
 
-const VERSION = '0.2.7';
+const VERSION = '0.2.9';
 const MCP_VERSION = '2026-07-28';
 const PORT = Number(process.env.FIGMA_AGENT_BRIDGE_PORT || 3874);
 const HOST = '127.0.0.1';
@@ -342,7 +342,7 @@ const TOOLS = [
   },
   {
     name:'figma_inspect',
-    description:'Deep bounded inspection of live nodes. Returns real Plugin API structure rather than inferred screenshot structure; opt into geometry, styled text, components, CSS, styles and dev resources only when needed.',
+    description:'Deep inspection of live nodes, returning real Plugin API structure rather than structure inferred from a screenshot. For 1:1 work request the whole frame at depth with the include* flags on and filter the (large) result by denylisting boilerplate — do not sample narrowly and widen, which is how properties get missed. NOTE: x/y are parent-relative; use absoluteBoundingBox for frame coordinates, and absoluteRenderBounds for what is actually painted.',
     inputSchema:S.obj({
       ids:S.arr(S.string(),'Node ids; defaults to selection.'),depth:{type:'integer',minimum:0,maximum:12},mode:{type:'string',enum:['summary','full']},
       childOffset:{type:'integer',minimum:0},childLimit:{type:'integer',minimum:1,maximum:1000},maxNodes:{type:'integer',minimum:1,maximum:5000},
@@ -366,7 +366,7 @@ const TOOLS = [
   },
   {
     name:'figma_snapshot',
-    description:'One-round-trip design understanding: deep bounded node structure plus an authoritative Figma PNG render. Prefer this when an agent needs both semantics and visual truth for the same node.',
+    description:'One-round-trip design understanding: deep bounded node structure plus an authoritative Figma PNG render. Prefer this whenever you are matching an implementation to a design — the structure states intent, the render is the only thing that proves it, and having both lets you diff against a screenshot of the built UI instead of re-reading properties.',
     inputSchema:S.obj({
       id:S.string(),depth:{type:'integer',minimum:0,maximum:6},mode:{type:'string',enum:['summary','full']},childLimit:{type:'integer',minimum:1,maximum:500},maxNodes:{type:'integer',minimum:1,maximum:2500},
       includeGeometry:S.bool(),includeTextSegments:S.bool(),includeComponentDetails:S.bool(),includeStyles:S.bool(),includeCSS:S.bool(),includeDevResources:S.bool(),
@@ -634,6 +634,21 @@ function mcpToolResult(name,result,args={}) {
     const compact={...result}; delete compact.base64; compact.savedFile=saved;
     return {content:textContent(compact),structuredContent:compact};
   }
+  if (name === 'figma_inspect' && result && typeof result === 'object' && Array.isArray(result.nodes)) {
+    // Guidance where it is actually read. Agents rarely re-read server instructions
+    // mid-task, and the two mistakes below are silent: wrong spacing derived from
+    // parent-relative x/y, and properties missed by narrowing the request.
+    const notes = [
+      'x/y are PARENT-relative. For frame coordinates subtract the frame\'s absoluteBoundingBox origin from this node\'s. Do not derive padding from raw x/y.',
+      'absoluteRenderBounds = ink actually painted; absoluteBoundingBox = node box. A difference between them is design intent, not noise.',
+      'opacity/visible/blendMode are node fields and are not fully mirrored in css.',
+      'Pixels are the arbiter: verify with figma_render/figma_snapshot against a screenshot of the built UI rather than re-reading properties.'
+    ];
+    const size = JSON.stringify(result).length;
+    if (size > 150000) notes.unshift('This payload is ~' + Math.round(size/1000) + 'k chars, mostly per-node boilerplate. Do NOT retry with a smaller depth — narrowing is how properties get missed. Keep the breadth, let it spill to a file, and filter the file by denylisting boilerplate (inferredVariables, transforms, componentProperties.preferredValues) instead of allowlisting fields you expect.');
+    const withNote = { ...result, note: notes.join(' ') };
+    return { content:textContent(withNote), structuredContent:withNote };
+  }
   return { content:textContent(result), structuredContent:result && typeof result==='object' ? result : undefined };
 }
 
@@ -669,7 +684,16 @@ async function handleRpc(msg) {
             'If no plugin is connected, the bridge cannot connect it for you: ask the user to run the "Figma Agent Bridge" plugin (Plugins → Development) and relay the pairing code from bridge_status. Wait for their confirmation instead of retrying.',
             'Once connected, call figma_context for pages, active page and selection. Omit clientId whenever exactly one file is connected.',
             '',
-            'READING: figma_search to locate nodes, figma_inspect for depth. Both are bounded — start narrow (small depth/childLimit) and widen, because full-fidelity dumps of a whole screen will exceed your context. Use topLevelOnly:true to list a page\'s screens. Mask relationships are resolved for you: a mask node reports `masks.maskedIds`, and each clipped node reports `maskedBy`.',
+            'READING: figma_search to locate nodes, figma_inspect for depth. Use topLevelOnly:true to list a page\'s screens. Mask relationships are resolved for you: a mask node reports `masks.maskedIds`, and each clipped node reports `maskedBy`.',
+            'Reading cheaply is about FILTERING, not about asking for less. Roughly 99% of an inspect payload is per-node boilerplate (inferredVariables alone can be dozens of candidate bindings per node; componentProperties.preferredValues can be thousands of keys). One 136-node screen is ~3.4M chars raw but ~35k once that is stripped — affordable in full.',
+            '',
+            'WORKING 1:1 (matching an implementation to the design):',
+            'Do NOT sample a few nodes and widen. Narrow reads are how properties get missed: you only catch what you thought to ask for. Request the whole frame at depth, let the result spill to a file, and filter that file by DENYLISTING boilerplate rather than allowlisting the fields you expect. Fields you did not anticipate are exactly the ones that bite (a node-level opacity, a gradient angle, a shared-style binding).',
+            'Turn the include* flags ON for 1:1 work. Without includeTextSegments a mixed-style paragraph reports one font and the per-run styling is invisible.',
+            'COORDINATES: x/y are relative to the PARENT, not the frame. To get frame coordinates, subtract the frame\'s absoluteBoundingBox origin from the node\'s. Deriving padding straight from x/y is the single most common cause of wrong spacing.',
+            'INK vs BOX: absoluteBoundingBox is the node box; absoluteRenderBounds is what is actually painted. Where they differ, the difference is the intent — a 454-wide text box whose ink is exactly the 412 frame width means the word is meant to bleed edge to edge.',
+            'opacity, visible and blendMode live on the node and are not all reflected in css. Read them from the node.',
+            'VERIFY WITH PIXELS, NOT PROPERTIES. The payload describes intent; only a render proves fidelity. Use figma_snapshot for structure + authoritative render in one round trip, then diff that render against a screenshot of the built UI. Where the JSON and the pixels disagree, the pixels win. Budget your reading by the size of the ERROR, not the size of the design.',
             'EDITING: prefer the narrowest named tool; use figma_batch for multi-step edits with assertions and rollbackOnError, then figma_render to verify visually. Rich text goes through figma_text.',
             'figma_invoke is a last resort and requires the user to enable "Unsafe API invoke" in the plugin UI.',
             'Writes fail while the user has Write access paused in the plugin — surface that to them rather than retrying.'
