@@ -14,6 +14,12 @@
   file rather than retrying at a smaller depth.
 - figma_snapshot is now described as the tool to prefer when matching an
   implementation to a design: structure states intent, the render proves it.
+- Made the smoke suite runnable and self-consistent: it hardcoded port 3874 and
+  ignored FIGMA_AGENT_BRIDGE_PORT, so it could not run while a bridge was live,
+  and it asserted the literal version '0.2.7' -- meaning it was pinned to the
+  stale constant and would fail on any release bump. It now takes the port from
+  the environment (passing it to the spawned server) and asserts against the
+  version declared in package.json.
 - Fixed the reported server version: bridge/server.mjs still hard-coded 0.2.7,
   so a v0.2.8 install introduced itself as 0.2.7 in bridge_status and to pairing
   clients.
